@@ -2,15 +2,47 @@
 <title>Billionaire Mindset Training</title><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#0d0d10">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="apple-touch-icon" href="icon.svg">
 <style>
-body{margin:0;background:#0d0d10;color:#eee;font:16px/1.5 -apple-system,system-ui,sans-serif;padding:env(safe-area-inset-top) 0 80px}
-main{max-width:560px;margin:auto;padding:16px}h1,h2{color:#d4af37;font-family:Georgia,serif;font-weight:400}
-.card{background:#17171c;border:1px solid #2a2a30;border-radius:16px;padding:16px;margin:12px 0}
-button{background:#d4af37;color:#111;border:0;border-radius:12px;padding:12px 16px;font-size:16px;margin:4px 4px 4px 0}
-button.ghost{background:none;color:#d4af37;border:1px solid #d4af37}
-textarea,input{width:100%;box-sizing:border-box;background:#0f0f13;color:#eee;border:1px solid #333;border-radius:10px;padding:10px;font-size:16px;margin:4px 0}
-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#111;border-top:1px solid #2a2a30;padding-bottom:env(safe-area-inset-bottom)}
-nav button{flex:1;background:none;color:#aaa;border-radius:0;margin:0}nav button.on{color:#d4af37}
-.timer{font-size:48px;text-align:center;color:#d4af37}.muted{color:#888;font-size:13px}label{display:block;margin:6px 0}
+:root{--g:#d4af37;--bg:#0d0d10;--card:rgba(23,23,28,.85)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;min-height:100vh;color:#eee;font:16px/1.55 -apple-system,system-ui,sans-serif;background:var(--bg);padding:env(safe-area-inset-top) 0 90px;transition:background 1s}
+body.morning{background:linear-gradient(180deg,#2a1a2e 0%,#3b2a2a 25%,#0d0d10 60%) fixed}
+body.evening{background:linear-gradient(180deg,#0a1028 0%,#141233 30%,#0d0d10 70%) fixed}
+main{max-width:560px;margin:auto;padding:16px}
+h1,h2,h3{color:var(--g);font-family:Georgia,'Times New Roman',serif;font-weight:400;margin:.3em 0}
+h1{font-size:34px}h2{font-size:24px}
+.fade{animation:fade .35s ease}@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border:1px solid #2a2a30;border-radius:18px;padding:16px;margin:12px 0}
+.hero{border:1px solid var(--g);padding:22px}
+button{background:var(--g);color:#111;border:0;border-radius:14px;padding:13px 18px;font-size:16px;margin:4px 4px 4px 0;font-weight:600}
+button.ghost{background:none;color:var(--g);border:1px solid var(--g)}button.big{width:100%;font-size:18px;padding:16px}
+textarea,input,select{width:100%;background:#0f0f13;color:#eee;border:1px solid #333;border-radius:12px;padding:11px;font-size:16px;margin:4px 0;font-family:inherit}
+input[type=checkbox]{width:22px;height:22px;accent-color:var(--g);margin:0 10px 0 0;vertical-align:middle}input[type=range]{accent-color:var(--g)}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(10,10,12,.95);border-top:1px solid #2a2a30;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav button{flex:1;background:none;color:#888;border-radius:0;margin:0;font-weight:400;font-size:13px}nav button.on{color:var(--g)}
+.muted{color:#999;font-size:13px}label{display:block;margin:8px 0}
+.row{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid #222}.row span.r{margin-left:auto;color:#999;font-size:13px}.row.done{opacity:.55;text-decoration:line-through}
+.chip{display:inline-block;border:1px solid #444;border-radius:999px;padding:6px 12px;margin:3px;font-size:14px;color:#ccc;cursor:pointer}.chip.on{border-color:var(--g);color:var(--g)}
+blockquote{font-family:Georgia,serif;font-size:19px;border-left:3px solid var(--g);margin:10px 0;padding-left:12px}
+#player,.over{position:fixed;inset:0;z-index:10;overflow:auto;padding:calc(env(safe-area-inset-top) + 14px) 18px 30px;background:#0d0d10}
+#player.m{background:linear-gradient(180deg,#2a1a2e,#3b2a2a 40%,#0d0d10)}#player.e{background:linear-gradient(180deg,#0a1028,#141233 50%,#0d0d10)}
+#player.imm,.feed>div{background:linear-gradient(-45deg,#0d0d10,#2b1d3a,#0b1e33,#3a2a12);background-size:400% 400%;animation:grad 18s ease infinite}
+@keyframes grad{0%{background-position:0 50%}50%{background-position:100% 50%}100%{background-position:0 50%}}
+.bar{height:4px;background:#333;border-radius:4px;margin:8px 0 16px}.bar i{display:block;height:100%;background:var(--g);border-radius:4px;transition:width .4s}
+.ring{position:relative;width:230px;height:230px;margin:16px auto}.ring svg{transform:rotate(-90deg);width:100%;height:100%}
+.rb{fill:none;stroke:#2a2a30;stroke-width:6}.rf{fill:none;stroke:var(--g);stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .25s linear}
+.rt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:40px Georgia,serif;color:var(--g)}
+.bc{width:210px;height:210px;margin:20px auto;border-radius:50%;background:radial-gradient(circle,#f4dc8a,#d4af37 45%,rgba(212,175,55,.1) 70%);transform:scale(.5);transition:transform 4s ease-in-out;box-shadow:0 0 60px rgba(212,175,55,.35)}
+.bc.in{transform:scale(1)}.cue{text-align:center;font:28px Georgia,serif;color:#f4dc8a;min-height:40px}
+.ovtext{font:30px/1.35 Georgia,serif;color:#f4dc8a;text-align:center;margin:30px 0}
+.navb{display:flex;gap:8px;margin-top:20px}.navb button{flex:1}
+.feed{position:fixed;inset:0;z-index:20;overflow-y:scroll;scroll-snap-type:y mandatory}.feed>div{height:100vh;scroll-snap-align:start;display:flex;align-items:center;justify-content:center;padding:30px;text-align:center;font:32px/1.35 Georgia,serif;color:#f4dc8a}
+.x{position:fixed;top:calc(env(safe-area-inset-top) + 10px);right:14px;z-index:30;background:rgba(0,0,0,.5);color:#fff}
+.heat{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.heat div{aspect-ratio:1;border-radius:8px;background:#1a1a20;display:flex;align-items:center;justify-content:center;font-size:12px}
+.heat .h1{background:#3a3220}.heat .h2{background:#7a6220}
+.stat{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.stat div{background:#111116;border-radius:12px;padding:10px}.stat b{font:24px Georgia,serif;color:var(--g);display:block}
+.cele{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:radial-gradient(circle,#3a2a12,#0d0d10 70%)}
+.spark{position:fixed;width:8px;height:8px;border-radius:50%;background:var(--g);animation:fall 2.5s ease-in forwards}@keyframes fall{to{transform:translateY(100vh) rotate(360deg);opacity:0}}
+.banner{background:#2a2410;border:1px solid var(--g);border-radius:14px;padding:12px;margin:10px 0}
 </style></head><body><main id="app"></main>
-<nav><button data-v="home">Today</button><button data-v="morning">Morning</button><button data-v="evening">Evening</button><button data-v="lessons">Lessons</button><button data-v="progress">Progress</button></nav>
-<script src="app.js"></script></body></html>
+<nav id="nav"><button data-v="today">☀️<br>Today</button><button data-v="lessons">📖<br>Lessons</button><button data-v="journal">✍️<br>Journal</button><button data-v="me">👤<br>Me</button></nav>
+<script src="lessons.js"></script><script src="app.js"></script></body></html>
