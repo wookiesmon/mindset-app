@@ -61,13 +61,27 @@ V.today=()=>{const k=new Date().getHours()<17?'m':'e',d=D(),st=SESS[k](),steps=d
 ${st.map((s,i)=>`<label class="row ${steps[k+i]?'done':''}"><input type="checkbox" ${steps[k+i]?'checked':''} onchange="tick('${k}',${i},this.checked)">${esc(s.t)}<span class="r">${s.min?s.min+' min':''}</span></label>`).join('')}
 <button class="big" style="margin-top:14px" onclick="play('${k}')">${isDone?'Do it again':'Start '+(k=='m'?'Morning':'Evening')}</button></div>
 <button class="ghost" onclick="play('${o}')">Open ${o=='m'?'morning':'evening'} session instead ${d[o+'Done']?'✓':''}</button>
-<div class="card"><div class="muted">Lesson of the day · ${esc(lesson[0])}</div><h2>${esc(lesson[1])}</h2><p>${esc(lesson[2])}</p></div>
+${todayLesson(d)}
 <div class="card"><div class="muted">Scripture of the day</div><h2>${esc(verse[1])}</h2><blockquote>${esc(verse[2])}</blockquote></div>
 <p class="muted">Other teachers' ideas are paraphrased; scripture is quoted from the public-domain KJV. They're separate traditions and aren't presented as making the same claims. For growth and reflection only, with no health or wealth guarantees. Check with a doctor before fasting, cold exposure or new exercise.</p>`};
 function tick(k,i,v){const d=D();(d.steps??={})[k+i]=v;save();const st=SESS[k]();if(st.every((s,j)=>d.steps[k+j])&&!d[k+'Done'])finish(k);else go('today')}
-V.lessons=()=>`<h1>Lessons</h1><p class="muted">${L.length} cards. Teachers' ideas are paraphrased; scripture is KJV.</p><div>${['All','Faith','Mind','Body','Money'].map(f=>`<span class="chip ${LF==f?'on':''}" onclick="LF='${f}';go('lessons')">${f}</span>`).join('')}</div>`+
- L.filter(l=>LF=='All'||(LF=='Faith'?/KJV|Jesus/.test(l[0]):LF=='Mind'?/Lipton|Dispenza|Habits|Oprah|Dalio|Blakely/.test(l[0]):LF=='Body'?/Sinclair/.test(l[0]):/Buffett|Munger|Naval|Bezos|Musk|Carnegie/.test(l[0]))).map(l=>`<div class="card"><div class="muted">${esc(l[0])}</div><h2>${esc(l[1])}</h2><p>${esc(l[2])}</p></div>`).join('');
+V.lessons=()=>`<h1>Lessons</h1><p class="muted">Read one card, try its practice today, then reflect.</p><p class="muted">${L.length} cards. Teachers' ideas are paraphrased; scripture is KJV.</p><div>${['All','Faith','Mind','Body','Money'].map(f=>`<span class="chip ${LF==f?'on':''}" onclick="LF='${f}';go('lessons')">${f}</span>`).join('')}</div>`+
+ L.filter(l=>LF=='All'||(LF=='Faith'?/KJV|Jesus/.test(l[0]):LF=='Mind'?/Lipton|Dispenza|Habits|Oprah|Dalio|Blakely/.test(l[0]):LF=='Body'?/Sinclair/.test(l[0]):/Buffett|Munger|Naval|Bezos|Musk|Carnegie/.test(l[0]))).map(l=>lessonCard(l)).join('');
 let LF='All';
+// ===== Lesson practice, reflection, focus =====
+const lIdx=l=>L.indexOf(l),byTitle=t=>L.find(l=>l[1]==t);
+function lessonCard(l,o={}){const i=lIdx(l),d=D(),pinned=d.focus==l[1];
+ return `<div class="card" id="lc${i}"><div class="muted">${o.label?o.label+' · ':''}${esc(l[0])}</div><h2>${esc(l[1])}</h2><p>${esc(l[2])}</p>
+<div class="practice">${o.check?`<label class="row ${d.focusDone?'done':''}" style="border:0"><input type="checkbox" ${d.focusDone?'checked':''} onchange="focusDone(this.checked)"><span><b>Do this today:</b> ${esc(l[3])}</span></label>`:`<b>Do this today:</b> ${esc(l[3])}`}</div>
+<button class="ghost" onclick="reflectOpen(${i})">✍️ Reflect</button>${o.check?`<button class="ghost" onclick="unpin()">Unpin</button>`:pinned?`<button class="ghost" onclick="go('today')">📌 Today's focus ✓</button>`:`<button class="ghost" onclick="pin(${i})">📌 Make today's focus</button>`}
+<div id="lr${i}"></div></div>`}
+function todayLesson(d){const l=d.focus&&byTitle(d.focus);return l?lessonCard(l,{label:"📌 Today's lesson",check:1}):lessonCard(lesson,{label:'Lesson of the day'})}
+function pin(i){const d=D();if(d.focus!=L[i][1]){d.focus=L[i][1];d.focusDone=false}save();vib(30);go('today')}
+function unpin(){const d=D();delete d.focus;delete d.focusDone;save();go('today')}
+function focusDone(v){D().focusDone=v;save();if(v)vib([60,40,60]);go('today')}
+function reflectOpen(i){const b=$("#lr"+i);if(b.innerHTML){b.innerHTML='';return}
+ b.innerHTML=`<label>How will I apply this today?<textarea rows="3" id="rft${i}"></textarea></label><button onclick="reflectSave(${i})">Save reflection</button><button class="ghost" onclick="$('#lr${i}').innerHTML=''">Cancel</button>`;$('#rft'+i).focus()}
+function reflectSave(i){const t=$('#rft'+i).value.trim();if(!t)return $('#rft'+i).focus();const d=D();(d.lessons??=[]).push({title:L[i][1],text:t,t:Date.now()});save();vib(30);$("#lr"+i).innerHTML='<p class="muted">Saved to your Journal ✓</p>'}
 // ===== Player =====
 let PL=null;
 function play(k,i){const d=D(),st=SESS[k](),steps=d.steps||{};if(i==null){i=st.findIndex((s,j)=>!steps[k+j]);if(i<0)i=0}PL={k,i,st};let el=$('#player');if(!el){el=document.createElement('div');el.id='player';document.body.appendChild(el)}renderStep()}
@@ -111,16 +125,31 @@ function editAff(){const r=prompt('Edit affirmations (separate with |)',affirm()
 // ===== Finish & celebration =====
 function finish(k){stopT();const d=D(),st=SESS[k]();let credit=0;
  if(!d[k+'Done']){d[k+'Done']=true;d.min=(d.min||0)+sumMin(st);d.tracks=[...new Set([...(d.tracks||[]),...st.map(s=>s.tr).filter(Boolean)])];
-  if(k=='e'&&!d.credited){const n=[1,2,3].filter(i=>d['a'+i+'ok']).length+(d.oldB&&d.newB?1:0);credit=n*S.settings.credit;if(credit){const bal=(S.bank.at(-1)?.bal||0)+credit;S.bank.push({date:today(),amt:credit,bal})}d.credited=true}}
+  if(k=='e'&&!d.credited){const n=[1,2,3].filter(i=>d['a'+i+'ok']).length+(d.oldB&&d.newB?1:0)+(d.focus&&d.focusDone?1:0);credit=n*S.settings.credit;if(credit){const bal=(S.bank.at(-1)?.bal||0)+credit;S.bank.push({date:today(),amt:credit,bal})}d.credited=true}}
  (d.steps??={});st.forEach((s,i)=>d.steps[k+i]=true);save();$('#player')?.remove();PL=null;
  const c=document.createElement('div');c.className='over cele';c.innerHTML=`<div class="fade"><div style="font-size:72px">${k=='m'?'☀️':'🌙'}</div><h1>${k=='m'?'Morning complete':'Evening complete'}</h1><p>🔥 ${streak()} day streak · ${d.min} min today</p>${credit?`<p>Mental Bank +${money(credit)}</p>`:''}<p class="muted">${k=='m'?'Go live today as your future self.':'Rest well. Tomorrow you start again, renewed.'}</p><button class="big" onclick="this.closest('.over').remove();go('today')">Continue</button></div>`;document.body.appendChild(c);
  if(S.settings.bells)bell();vib([100,50,100]);for(let i=0;i<40;i++){const p=document.createElement('i');p.className='spark';p.style.left=Math.random()*100+'vw';p.style.top=-Math.random()*30+'vh';p.style.animationDelay=Math.random()+'s';c.appendChild(p)}}
 // ===== Journal =====
 const ENTRY=[['intent','Intention'],['a1','Money action'],['a2','Money action'],['a3','Money action'],['mVerse','Scripture reflection'],['review','Review'],['money','Money lesson'],['grat','Gratitude'],['prayer','Prayer']];
-function entryHTML(k,d){return `<div class="card"><b>${k}</b> ${d.mDone?'☀️':''}${d.eDone?'🌙':''} ${d.mMood?MOODS[d.mMood-1]:''}${d.eMood?MOODS[d.eMood-1]:''}${ENTRY.filter(([f])=>d[f]).map(([f,l])=>`<p><span class="muted">${l}:</span> ${esc(d[f])}${d[f+'ok']?' ✓':''}</p>`).join('')}${d.oldB?`<p><span class="muted">Belief:</span> <s>${esc(d.oldB)}</s> → ${esc(d.newB)}</p>`:''}</div>`}
-V.journal=()=>{const ks=Object.keys(S.days).sort().reverse().filter(k=>ENTRY.some(([f])=>S.days[k][f])||S.days[k].oldB);const t=new Date(),md=today().slice(5);
+const hasEntry=d=>d&&(ENTRY.some(([f])=>d[f])||d.oldB||d.newB||d.notes?.length||d.lessons?.length);
+const tm=t=>new Date(t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+function entryHTML(k,d){return `<div class="card"><b>${k}</b> ${d.mDone?'☀️':''}${d.eDone?'🌙':''} ${d.mMood?MOODS[d.mMood-1]:''}${d.eMood?MOODS[d.eMood-1]:''}
+${(d.notes||[]).map((n,i)=>`<div class="jn"><span class="muted">✍️ ${tm(n.t)}${n.mood?' · '+MOODS[n.mood-1]:''}</span><span class="ja"><a onclick="noteEd('${k}',${i})">Edit</a><a onclick="jDel('${k}','notes',${i})">Delete</a></span><p>${esc(n.text).replace(/\n/g,'<br>')}</p></div>`).join('')}
+${(d.lessons||[]).map((r,i)=>`<div class="jn"><span class="muted">📖 Lesson reflection · ${esc(r.title)}</span><span class="ja"><a onclick="lrEd('${k}',${i})">Edit</a><a onclick="jDel('${k}','lessons',${i})">Delete</a></span><p>${esc(r.text).replace(/\n/g,'<br>')}</p></div>`).join('')}
+${d.focus?`<p><span class="muted">📌 Today's lesson:</span> ${esc(d.focus)}${d.focusDone?' ✓':''}</p>`:''}
+${ENTRY.filter(([f])=>d[f]).map(([f,l])=>`<p><span class="muted">${l}:</span> ${esc(d[f])}${d[f+'ok']?' ✓':''}</p>`).join('')}${d.oldB||d.newB?`<p><span class="muted">Belief:</span> ${d.oldB?`<s>${esc(d.oldB)}</s> → `:''}${esc(d.newB)}</p>`:''}</div>`}
+V.journal=()=>{const ks=Object.keys(S.days).sort().reverse().filter(k=>hasEntry(S.days[k]));const t=new Date(),md=today().slice(5);
  const otd=ks.filter(k=>k!==today()&&(k.slice(5)==md||[7,30,90,365].some(n=>{const x=new Date();x.setDate(t.getDate()-n);return key(x)==k})));
- return `<h1>Journal</h1>${otd.length?`<h3>On this day</h3>${otd.map(k=>entryHTML(k,S.days[k])).join('')}<h3>Timeline</h3>`:''}${ks.map(k=>entryHTML(k,S.days[k])).join('')||'<p class="muted">Your entries will appear here after your first session.</p>'}`};
+ return `<div style="display:flex;align-items:center;justify-content:space-between"><h1>Journal</h1><button onclick="noteEd()">+ New entry</button></div><p class="muted">Entries from your morning and evening sessions appear here automatically, or tap + New entry to write anytime.</p>${otd.length?`<h3>On this day</h3>${otd.map(k=>entryHTML(k,S.days[k])).join('')}<h3>Timeline</h3>`:''}${ks.map(k=>entryHTML(k,S.days[k])).join('')||'<p class="muted">No entries yet. Tap + New entry to write your first one.</p>'}`};
+// Free-write editor (new or existing note) and lesson-reflection editor
+let JM=0;
+function edOpen(title,prompt,text,withMood,onSave){const o=document.createElement('div');o.className='over fade';o.id='ed';
+ o.innerHTML=`<h1>${esc(title)}</h1><label>${esc(prompt)}<textarea id="edt" rows="9">${esc(text)}</textarea></label>${withMood?`<p class="muted">Mood (optional)</p><div id="edm">${MOODS.map((m,i)=>`<span class="chip ${JM==i+1?'on':''}" style="font-size:24px" onclick="JM=JM==${i+1}?0:${i+1};document.querySelectorAll('#edm .chip').forEach((c,j)=>c.classList.toggle('on',JM==j+1))">${m}</span>`).join('')}</div>`:''}<div class="navb"><button class="ghost" onclick="$('#ed').remove()">Cancel</button><button id="eds">Save</button></div>`;
+ document.body.appendChild(o);$('#eds').onclick=()=>{const t=$('#edt').value.trim();if(!t)return $('#edt').focus();onSave(t);save();o.remove();vib(30);go(view)};$('#edt').focus()}
+function noteEd(k,i){const ex=k!=null?S.days[k].notes[i]:null;JM=ex?.mood||0;
+ edOpen(ex?'Edit entry':'New entry',ex?k:'Write anything: thoughts, wins, prayers, ideas.',ex?.text||'',1,t=>{if(ex){ex.text=t;ex.mood=JM||undefined}else(D().notes??=[]).push({t:Date.now(),text:t,mood:JM||undefined})})}
+function lrEd(k,i){const r=S.days[k].lessons[i];edOpen('Edit reflection',r.title+' · How will I apply this today?',r.text,0,t=>{r.text=t})}
+function jDel(k,f,i){if(!confirm('Delete this entry?'))return;S.days[k][f].splice(i,1);if(!S.days[k][f].length)delete S.days[k][f];save();go('journal')}
 // ===== Me: progress, bank, ledger, settings =====
 function heat(){const t=new Date();t.setDate(t.getDate()-34);let h='';for(let i=0;i<35;i++){const d=S.days[key(t)]||{},n=(d.mDone?1:0)+(d.eDone?1:0);h+=`<div class="h${n}" title="${key(t)}">${d.mDone?'☀️':''}${d.eDone?'🌙':''}</div>`;t.setDate(t.getDate()+1)}return `<div class="heat">${h}</div>`}
 function chart(){const b=S.bank;if(!b.length)return '<p class="muted">Complete evening reviews to grow your Mental Bank.</p>';const mx=Math.max(...b.map(x=>x.bal)),pts=[{bal:0},...b].map((x,i,a)=>`${i/(a.length-1||1)*300},${100-x.bal/mx*90}`).join(' ');return `<svg viewBox="0 0 300 105" style="width:100%"><polyline points="${pts}" fill="none" stroke="#d4af37" stroke-width="2.5"/></svg>`}
